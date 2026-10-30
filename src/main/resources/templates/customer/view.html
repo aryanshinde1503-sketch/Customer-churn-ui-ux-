@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${customer.fullName} + ' | ChurnGuard Pro'">Customer Details</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>.toast-item{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:8px;background:#1e293b;color:#f1f5f9;font-size:13.5px;font-weight:500;box-shadow:0 10px 15px -3px rgba(0,0,0,.2);opacity:0;transform:translateX(100%);transition:all .3s ease;max-width:360px;}.toast-item.show{opacity:1;transform:translateX(0);}.toast-item.toast-success{border-left:4px solid #10b981;}.toast-close{background:transparent;border:none;color:#94a3b8;cursor:pointer;font-size:16px;padding:0;}</style>
+</head>
+<body>
+<div class="app-wrapper">
+    <div th:replace="~{fragments/layout :: sidebar('customers')}"></div>
+    <div class="main-content" id="mainContent">
+        <div th:replace="~{fragments/layout :: topbar('Customer Details')}"></div>
+
+        <div class="page-content fade-in">
+            <!-- Flash -->
+            <div th:if="${successMessage}" class="alert alert-success alert-auto-dismiss">
+                <i class="bi bi-check-circle-fill"></i><span th:text="${successMessage}"></span>
+            </div>
+
+            <!-- Header -->
+            <div class="page-header">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-12">
+                    <div class="d-flex align-items-center gap-16">
+                        <div class="avatar" style="width:56px;height:56px;font-size:20px;"
+                             th:text="${#strings.substring(customer.firstName,0,1) + #strings.substring(customer.lastName,0,1)}">AB</div>
+                        <div>
+                            <h1 class="page-title" th:text="${customer.fullName}">Customer Name</h1>
+                            <div class="d-flex align-items-center gap-8">
+                                <span style="font-size:13px;color:var(--text-muted);" th:text="${customer.customerId}">ID</span>
+                                <span th:if="${customer.churnStatus}" class="badge badge-danger">Churned</span>
+                                <span th:unless="${customer.churnStatus}" class="badge badge-success">Active</span>
+                                <span th:if="${customer.isDemoData}" class="badge badge-demo">Demo Data</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-8">
+                        <a th:href="@{/customers}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Back</a>
+                        <a th:href="@{/predictions/new(customerId=${customer.id})}" class="btn btn-outline-primary"><i class="bi bi-cpu"></i> Run Prediction</a>
+                        <a th:href="@{/customers/{id}/edit(id=${customer.id})}" class="btn btn-primary"><i class="bi bi-pencil"></i> Edit</a>
+                        <form th:action="@{/customers/{id}/delete(id=${customer.id})}" method="post" th:id="'delForm'">
+                            <button type="button" class="btn btn-danger"
+                                    onclick="confirmDelete('delForm', 'this customer')">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row cols-3 g-20">
+                <!-- Left: Details -->
+                <div style="grid-column: span 2;">
+                    <div class="form-section">
+                        <div class="form-section-title">Personal Information</div>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <span class="detail-label">Email</span>
+                                <span class="detail-value" th:text="${customer.email ?: '—'}">email</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Gender</span>
+                                <span class="detail-value" th:text="${customer.gender}">Gender</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Senior Citizen</span>
+                                <span class="detail-value" th:text="${customer.seniorCitizen ? 'Yes' : 'No'}">No</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Partner</span>
+                                <span class="detail-value" th:text="${customer.partner ? 'Yes' : 'No'}">No</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Dependents</span>
+                                <span class="detail-value" th:text="${customer.dependents ? 'Yes' : 'No'}">No</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Tenure</span>
+                                <span class="detail-value" th:text="${customer.tenure} + ' months'">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="form-section-title">Services</div>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <span class="detail-label">Phone Service</span>
+                                <span class="detail-value" th:text="${customer.phoneService ? 'Yes' : 'No'}">No</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Multiple Lines</span>
+                                <span class="detail-value" th:text="${#strings.replace(customer.multipleLines.name(),'_',' ')}">No</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Internet Service</span>
+                                <span class="detail-value" th:text="${#strings.replace(customer.internetService.name(),'_',' ')}">No</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Online Security</span>
+                                <span class="detail-value" th:text="${#strings.replace(customer.onlineSecurity.name(),'_',' ')}">No</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Online Backup</span>
+                                <span class="detail-value" th:text="${#strings.replace(customer.onlineBackup.name(),'_',' ')}">No</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Device Protection</span>
+                                <span class="detail-value" th:text="${#strings.replace(customer.deviceProtection.name(),'_',' ')}">No</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Tech Support</span>
+                                <span class="detail-value" th:text="${#strings.replace(customer.techSupport.name(),'_',' ')}">No</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Streaming TV</span>
+                                <span class="detail-value" th:text="${#strings.replace(customer.streamingTv.name(),'_',' ')}">No</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Streaming Movies</span>
+                                <span class="detail-value" th:text="${#strings.replace(customer.streamingMovies.name(),'_',' ')}">No</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <div class="form-section-title">Billing</div>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <span class="detail-label">Contract</span>
+                                <span class="detail-value" th:text="${#strings.replace(customer.contract.name(),'_',' ')}">Contract</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Paperless Billing</span>
+                                <span class="detail-value" th:text="${customer.paperlessBilling ? 'Yes' : 'No'}">No</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Payment Method</span>
+                                <span class="detail-value" th:text="${customer.paymentMethod.displayName}">Method</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Monthly Charges</span>
+                                <span class="detail-value fw-700 text-primary-color" th:text="'$' + ${#numbers.formatDecimal(customer.monthlyCharges,1,2)}">$0</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Total Charges</span>
+                                <span class="detail-value fw-700" th:text="'$' + ${#numbers.formatDecimal(customer.totalCharges,1,2)}">$0</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Member Since</span>
+                                <span class="detail-value" th:text="${#temporals.format(customer.createdAt,'MMM d, yyyy')}">Date</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Prediction History -->
+                <div>
+                    <div class="card" style="margin-bottom:16px;">
+                        <div class="card-body">
+                            <div class="stat-label">Churn Status</div>
+                            <div style="margin:12px 0;">
+                                <span th:if="${customer.churnStatus}"
+                                      class="badge badge-danger" style="font-size:14px;padding:8px 16px;">
+                                    <i class="bi bi-x-circle"></i> Churned
+                                </span>
+                                <span th:unless="${customer.churnStatus}"
+                                      class="badge badge-success" style="font-size:14px;padding:8px 16px;">
+                                    <i class="bi bi-check-circle"></i> Active
+                                </span>
+                            </div>
+                            <a th:href="@{/predictions/new(customerId=${customer.id})}" class="btn btn-primary" style="width:100%;justify-content:center;">
+                                <i class="bi bi-cpu"></i> Run New Prediction
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <div class="table-header">
+                            <span class="table-title">Prediction History (<span th:text="${#lists.size(predictions)}">0</span>)</span>
+                        </div>
+                        <div th:if="${#lists.isEmpty(predictions)}" style="padding:24px;text-align:center;color:var(--text-muted);">
+                            No predictions yet.
+                        </div>
+                        <div th:each="p : ${predictions}" style="padding:12px 16px;border-bottom:1px solid var(--border);">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="fw-600" th:text="${p.probabilityPercent} + '% probability'">0%</div>
+                                    <div style="font-size:11px;color:var(--text-muted);" th:text="${#temporals.format(p.createdAt,'MMM d, yyyy HH:mm')}">Date</div>
+                                </div>
+                                <span class="badge"
+                                      th:classappend="${p.riskCategory.name() == 'HIGH'} ? 'badge-danger' : (${p.riskCategory.name() == 'MEDIUM'} ? 'badge-warning' : 'badge-success')"
+                                      th:text="${p.riskCategory}">Risk</span>
+                            </div>
+                            <div class="progress" style="margin-top:6px;">
+                                <div class="progress-bar"
+                                     th:classappend="${p.riskCategory.name() == 'HIGH'} ? 'progress-bar-danger' : (${p.riskCategory.name() == 'MEDIUM'} ? 'progress-bar-warning' : 'progress-bar-success')"
+                                     th:style="'width:' + ${p.probabilityPercent} + '%'"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div th:replace="~{fragments/layout :: footer}"></div>
+    </div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

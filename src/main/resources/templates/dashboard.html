@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: title('Dashboard')}"></head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | ChurnGuard Pro</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>
+        .toast-item { display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:8px;background:#1e293b;color:#f1f5f9;font-size:13.5px;font-weight:500;box-shadow:0 10px 15px -3px rgba(0,0,0,.2);opacity:0;transform:translateX(100%);transition:all .3s ease;max-width:360px; }
+        .toast-item.show{opacity:1;transform:translateX(0);}
+        .toast-item.toast-success{border-left:4px solid #10b981;} .toast-item.toast-danger{border-left:4px solid #ef4444;} .toast-item.toast-warning{border-left:4px solid #f59e0b;} .toast-item.toast-info{border-left:4px solid #3b82f6;}
+        .toast-item i:first-child{font-size:16px;flex-shrink:0;} .toast-item span{flex:1;} .toast-close{background:transparent;border:none;color:#94a3b8;cursor:pointer;font-size:16px;padding:0;}
+        .toast-item.toast-success i:first-child{color:#10b981;} .toast-item.toast-danger i:first-child{color:#ef4444;}
+    </style>
+</head>
+<body>
+<div class="app-wrapper">
+    <div th:replace="~{fragments/layout :: sidebar('dashboard')}"></div>
+
+    <div class="main-content" id="mainContent">
+        <div th:replace="~{fragments/layout :: topbar('Dashboard')}"></div>
+
+        <div class="page-content fade-in">
+            <!-- Flash messages -->
+            <div th:if="${successMessage}" class="alert alert-success alert-auto-dismiss">
+                <i class="bi bi-check-circle-fill"></i> <span th:text="${successMessage}"></span>
+            </div>
+
+            <!-- Page Header -->
+            <div class="page-header">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-12">
+                    <div>
+                        <h1 class="page-title">Dashboard</h1>
+                        <p class="page-subtitle">Customer churn analytics and overview</p>
+                    </div>
+                    <div class="d-flex gap-8">
+                        <a th:href="@{/customers/new}" class="btn btn-secondary">
+                            <i class="bi bi-person-plus"></i> Add Customer
+                        </a>
+                        <a th:href="@{/predictions/new}" class="btn btn-primary">
+                            <i class="bi bi-cpu"></i> Run Prediction
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Stats -->
+            <div class="row cols-4 g-20" style="margin-bottom:24px;">
+                <div class="stat-card primary">
+                    <div class="stat-icon primary"><i class="bi bi-people-fill"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-label">Total Customers</div>
+                        <div class="stat-value" th:text="${stats.totalCustomers}">0</div>
+                        <div class="stat-meta">All registered customers</div>
+                    </div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-icon success"><i class="bi bi-person-check-fill"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-label">Active Customers</div>
+                        <div class="stat-value" th:text="${stats.activeCustomers}">0</div>
+                        <div class="stat-meta" th:text="${stats.retentionPercent} + '% retention rate'">Retention</div>
+                    </div>
+                </div>
+                <div class="stat-card danger">
+                    <div class="stat-icon danger"><i class="bi bi-person-x-fill"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-label">Churned</div>
+                        <div class="stat-value" th:text="${stats.churnedCustomers}">0</div>
+                        <div class="stat-meta" th:text="${stats.churnRatePercent} + '% churn rate'">Rate</div>
+                    </div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-icon warning"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-label">High Risk</div>
+                        <div class="stat-value" th:text="${stats.highRiskCustomers}">0</div>
+                        <div class="stat-meta">Flagged by predictions</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row cols-4 g-20" style="margin-bottom:24px;">
+                <div class="stat-card info">
+                    <div class="stat-icon info"><i class="bi bi-calendar-range"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-label">Avg Tenure</div>
+                        <div class="stat-value" th:text="${#numbers.formatDecimal(stats.averageTenure,1,1)} + ' mo'">0 mo</div>
+                        <div class="stat-meta">Customer lifetime</div>
+                    </div>
+                </div>
+                <div class="stat-card secondary">
+                    <div class="stat-icon secondary"><i class="bi bi-currency-dollar"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-label">Avg Monthly Charges</div>
+                        <div class="stat-value" th:text="'$' + ${#numbers.formatDecimal(stats.averageMonthlyCharges,1,2)}">$0</div>
+                        <div class="stat-meta">Per customer/month</div>
+                    </div>
+                </div>
+                <div class="stat-card primary">
+                    <div class="stat-icon primary"><i class="bi bi-cpu-fill"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-label">Total Predictions</div>
+                        <div class="stat-value" th:text="${stats.totalPredictions}">0</div>
+                        <div class="stat-meta">All-time predictions run</div>
+                    </div>
+                </div>
+                <div class="stat-card danger">
+                    <div class="stat-icon danger"><i class="bi bi-fire"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-label">High Risk Predictions</div>
+                        <div class="stat-value" th:text="${stats.highRiskPredictions}">0</div>
+                        <div class="stat-meta">≥70% churn probability</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="row cols-2 g-20" style="margin-bottom:24px;">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="bi bi-pie-chart-fill" style="color:var(--primary);margin-right:8px;"></i>Churn Distribution</span>
+                        <span class="badge badge-secondary">Live Data</span>
+                    </div>
+                    <div class="chart-container" style="height:260px;">
+                        <canvas id="churnDistChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="bi bi-bar-chart-fill" style="color:var(--info);margin-right:8px;"></i>Risk Distribution</span>
+                        <span class="badge badge-secondary">From Predictions</span>
+                    </div>
+                    <div class="chart-container" style="height:260px;">
+                        <canvas id="riskDistChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Customers & Predictions -->
+            <div class="row cols-2 g-20">
+                <!-- Recent Customers -->
+                <div class="table-container">
+                    <div class="table-header">
+                        <span class="table-title"><i class="bi bi-clock" style="margin-right:6px;"></i>Recent Customers</span>
+                        <a th:href="@{/customers}" class="btn btn-sm btn-secondary">View All</a>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Contract</th>
+                                <th>Tenure</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="c : ${recentCustomers}" th:data-href="@{/customers/{id}(id=${c.id})}"
+                                th:classappend="${c.isDemoData} ? 'demo-row'">
+                                <td>
+                                    <div class="fw-600" th:text="${c.fullName}">Name</div>
+                                    <div style="font-size:11px;color:var(--text-muted);" th:text="${c.customerId}">ID</div>
+                                </td>
+                                <td>
+                                    <span th:text="${#strings.replace(c.contract.name(),'_',' ')}">Contract</span>
+                                </td>
+                                <td th:text="${c.tenure} + ' mo'">0 mo</td>
+                                <td>
+                                    <span th:if="${c.churnStatus}" class="badge badge-danger">Churned</span>
+                                    <span th:unless="${c.churnStatus}" class="badge badge-success">Active</span>
+                                    <span th:if="${c.isDemoData}" class="badge badge-demo" style="font-size:9px;">Demo</span>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(recentCustomers)}">
+                                <td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px;">No customers found.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Recent Predictions -->
+                <div class="table-container">
+                    <div class="table-header">
+                        <span class="table-title"><i class="bi bi-cpu" style="margin-right:6px;"></i>Recent Predictions</span>
+                        <a th:href="@{/predictions/history}" class="btn btn-sm btn-secondary">View All</a>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Probability</th>
+                                <th>Risk</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="p : ${recentPredictions}"
+                                th:data-href="@{/predictions/history/{id}(id=${p.id})}">
+                                <td>
+                                    <div class="fw-600" th:text="${p.customerName}">Name</div>
+                                    <div style="font-size:11px;color:var(--text-muted);" th:text="'#' + ${p.id}">ID</div>
+                                </td>
+                                <td>
+                                    <div class="fw-600" th:text="${p.probabilityPercent} + '%'">0%</div>
+                                    <div class="progress" style="width:80px;margin-top:4px;">
+                                        <div class="progress-bar"
+                                             th:classappend="${p.riskCategory.name() == 'HIGH'} ? 'progress-bar-danger' : (${p.riskCategory.name() == 'MEDIUM'} ? 'progress-bar-warning' : 'progress-bar-success')"
+                                             th:style="'width:' + ${p.probabilityPercent} + '%'"></div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge"
+                                          th:classappend="${p.riskCategory.name() == 'HIGH'} ? 'badge-danger' : (${p.riskCategory.name() == 'MEDIUM'} ? 'badge-warning' : 'badge-success')"
+                                          th:text="${p.riskCategory}">Risk</span>
+                                </td>
+                                <td style="font-size:12px;" th:text="${#temporals.format(p.createdAt, 'MMM d, HH:mm')}">Date</td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(recentPredictions)}">
+                                <td colspan="4" style="text-align:center;color:var(--text-muted);padding:24px;">No predictions yet.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div th:replace="~{fragments/layout :: footer}"></div>
+    </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script th:src="@{/js/app.js}"></script>
+<script th:inline="javascript">
+    // Churn Distribution Doughnut
+    const churnData = {
+        churned: [[${stats.churnedCustomers}]],
+        active: [[${stats.activeCustomers}]]
+    };
+    new Chart(document.getElementById('churnDistChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Churned', 'Active'],
+            datasets: [{
+                data: [churnData.churned, churnData.active],
+                backgroundColor: ['#ef4444', '#10b981'],
+                borderWidth: 0,
+                hoverOffset: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { padding: 16, font: { family: 'Inter', size: 12 } } },
+                tooltip: { backgroundColor: '#1e293b', titleFont: { family: 'Inter' }, bodyFont: { family: 'Inter' }, padding: 10, cornerRadius: 8, titleColor: '#f1f5f9', bodyColor: '#94a3b8' }
+            },
+            cutout: '65%'
+        }
+    });
+
+    // Risk Distribution Bar
+    const riskData = {
+        high: [[${stats.highRiskPredictions}]],
+        medium: [[${stats.mediumRiskPredictions}]],
+        low: [[${stats.lowRiskPredictions}]]
+    };
+    new Chart(document.getElementById('riskDistChart'), {
+        type: 'bar',
+        data: {
+            labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+            datasets: [{
+                data: [riskData.low, riskData.medium, riskData.high],
+                backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                borderRadius: 6,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { backgroundColor: '#1e293b', titleFont: { family: 'Inter' }, bodyFont: { family: 'Inter' }, padding: 10, cornerRadius: 8, titleColor: '#f1f5f9', bodyColor: '#94a3b8' }
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { font: { family: 'Inter', size: 11 }, color: '#64748b' } },
+                y: { grid: { color: '#e2e8f0' }, ticks: { font: { family: 'Inter', size: 11 }, color: '#64748b' }, beginAtZero: true }
+            }
+        }
+    });
+</script>
+</body>
+</html>

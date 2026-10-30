@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:fragment="title(pageTitle)" th:text="${pageTitle} + ' | ChurnGuard Pro'">ChurnGuard Pro</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- App CSS -->
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <!-- Toast styles inline for reliability -->
+    <style>
+        .toast-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 16px; border-radius: 8px;
+            background: #1e293b; color: #f1f5f9;
+            font-size: 13.5px; font-weight: 500;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,.2);
+            opacity: 0; transform: translateX(100%);
+            transition: all .3s ease;
+            max-width: 360px;
+        }
+        .toast-item.show { opacity: 1; transform: translateX(0); }
+        .toast-item.toast-success { border-left: 4px solid #10b981; }
+        .toast-item.toast-danger { border-left: 4px solid #ef4444; }
+        .toast-item.toast-warning { border-left: 4px solid #f59e0b; }
+        .toast-item.toast-info { border-left: 4px solid #3b82f6; }
+        .toast-item i:first-child { font-size: 16px; flex-shrink: 0; }
+        .toast-item span { flex: 1; }
+        .toast-close { background: transparent; border: none; color: #94a3b8; cursor: pointer; font-size: 16px; padding: 0; }
+        .toast-item.toast-success i:first-child { color: #10b981; }
+        .toast-item.toast-danger i:first-child { color: #ef4444; }
+        .toast-item.toast-warning i:first-child { color: #f59e0b; }
+        .toast-item.toast-info i:first-child { color: #3b82f6; }
+    </style>
+    <th:block th:fragment="extra-head"></th:block>
+</head>
+<body>
+<!-- Fragment: sidebar -->
+<nav id="sidebar" class="sidebar" th:fragment="sidebar(activePage)">
+    <div class="sidebar-brand">
+        <div class="brand-icon"><i class="bi bi-graph-up-arrow"></i></div>
+        <span class="brand-name">ChurnGuard</span>
+        <span class="brand-badge sidebar-label">Pro</span>
+    </div>
+
+    <div class="sidebar-nav">
+        <div class="sidebar-section-title">Main</div>
+
+        <a th:href="@{/dashboard}" class="sidebar-nav-item" th:classappend="${activePage == 'dashboard'} ? 'active'">
+            <i class="sidebar-icon bi bi-grid-1x2-fill"></i>
+            <span class="sidebar-label">Dashboard</span>
+        </a>
+
+        <div class="sidebar-section-title">Customers</div>
+
+        <a th:href="@{/customers}" class="sidebar-nav-item" th:classappend="${activePage == 'customers'} ? 'active'">
+            <i class="sidebar-icon bi bi-people-fill"></i>
+            <span class="sidebar-label">Customer Management</span>
+        </a>
+
+        <div class="sidebar-section-title">Predictions</div>
+
+        <a th:href="@{/predictions/new}" class="sidebar-nav-item" th:classappend="${activePage == 'predictions'} ? 'active'">
+            <i class="sidebar-icon bi bi-cpu-fill"></i>
+            <span class="sidebar-label">Run Prediction</span>
+        </a>
+
+        <a th:href="@{/predictions/history}" class="sidebar-nav-item" th:classappend="${activePage == 'history'} ? 'active'">
+            <i class="sidebar-icon bi bi-clock-history"></i>
+            <span class="sidebar-label">Prediction History</span>
+        </a>
+
+        <div class="sidebar-section-title">Analytics</div>
+
+        <a th:href="@{/analytics}" class="sidebar-nav-item" th:classappend="${activePage == 'analytics'} ? 'active'">
+            <i class="sidebar-icon bi bi-bar-chart-fill"></i>
+            <span class="sidebar-label">Analytics</span>
+        </a>
+
+        <div class="sidebar-section-title">System</div>
+
+        <a th:href="@{/model-info}" class="sidebar-nav-item" th:classappend="${activePage == 'model-info'} ? 'active'">
+            <i class="sidebar-icon bi bi-boxes"></i>
+            <span class="sidebar-label">Model Information</span>
+        </a>
+
+        <a th:href="@{/settings}" class="sidebar-nav-item" th:classappend="${activePage == 'settings'} ? 'active'">
+            <i class="sidebar-icon bi bi-gear-fill"></i>
+            <span class="sidebar-label">Settings</span>
+        </a>
+    </div>
+
+    <div class="sidebar-footer">
+        <a href="/h2-console" target="_blank" class="sidebar-nav-item" style="font-size:12px;">
+            <i class="sidebar-icon bi bi-database-fill"></i>
+            <span class="sidebar-label">H2 Console</span>
+        </a>
+    </div>
+</nav>
+
+<!-- Fragment: topbar -->
+<header class="topbar" th:fragment="topbar(pageTitle)">
+    <button class="topbar-toggle" id="sidebarToggle" title="Toggle Sidebar">
+        <i class="bi bi-list"></i>
+    </button>
+    <div>
+        <div class="topbar-title" th:text="${pageTitle}">Page Title</div>
+    </div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-actions">
+        <button class="topbar-btn" id="themeToggle" title="Toggle Dark Mode">
+            <i class="bi bi-moon-fill"></i>
+        </button>
+        <a th:href="@{/predictions/new}" class="topbar-btn" title="New Prediction">
+            <i class="bi bi-plus-circle"></i>
+        </a>
+        <div class="avatar" title="Admin User">A</div>
+    </div>
+</header>
+
+<!-- Fragment: footer -->
+<footer th:fragment="footer">
+    <div style="text-align:center;padding:20px 24px;color:var(--text-muted);font-size:12px;border-top:1px solid var(--border);margin-top:auto;">
+        ChurnGuard Pro v1.0.0 &mdash; Customer Churn Prediction System &mdash;
+        <span class="badge badge-demo" style="vertical-align:middle;font-size:10px;">⚠️ Demo Mode</span>
+    </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="(${editMode} ? 'Edit' : 'Add') + ' Customer | ChurnGuard Pro'">Customer Form | ChurnGuard Pro</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>.toast-item{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:8px;background:#1e293b;color:#f1f5f9;font-size:13.5px;font-weight:500;box-shadow:0 10px 15px -3px rgba(0,0,0,.2);opacity:0;transform:translateX(100%);transition:all .3s ease;max-width:360px;}.toast-item.show{opacity:1;transform:translateX(0);}.toast-item.toast-success{border-left:4px solid #10b981;}.toast-close{background:transparent;border:none;color:#94a3b8;cursor:pointer;font-size:16px;padding:0;}</style>
+</head>
+<body>
+<div class="app-wrapper">
+    <div th:replace="~{fragments/layout :: sidebar('customers')}"></div>
+    <div class="main-content" id="mainContent">
+        <div th:replace="~{fragments/layout :: topbar(${editMode ? 'Edit Customer' : 'Add Customer'})}"></div>
+
+        <div class="page-content fade-in">
+            <div class="page-header">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-12">
+                    <div>
+                        <h1 class="page-title" th:text="${editMode ? 'Edit Customer' : 'Add New Customer'}">Form</h1>
+                        <p class="page-subtitle">Fill in all required fields below</p>
+                    </div>
+                    <a th:href="@{/customers}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Customers
+                    </a>
+                </div>
+            </div>
+
+            <div th:if="${errorMessage}" class="alert alert-danger">
+                <i class="bi bi-x-circle-fill"></i> <span th:text="${errorMessage}"></span>
+            </div>
+
+            <form th:action="${editMode ? '/customers/' + customerId + '/edit' : '/customers/new'}"
+                  method="post" th:object="${customerDto}" novalidate>
+
+                <!-- Basic Info -->
+                <div class="form-section">
+                    <div class="form-section-title">Basic Information</div>
+                    <div class="row cols-3 g-20">
+                        <div>
+                            <label class="form-label" for="customerId">Customer ID <span style="color:var(--danger);">*</span></label>
+                            <div class="d-flex gap-8">
+                                <input type="text" id="customerId" th:field="*{customerId}"
+                                       class="form-control" th:classappend="${#fields.hasErrors('customerId')} ? 'is-invalid'"
+                                       placeholder="e.g. CUST-00123" th:readonly="${editMode}">
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="generateCustomerId()" th:if="${!editMode}">Auto</button>
+                            </div>
+                            <span th:if="${#fields.hasErrors('customerId')}" class="invalid-feedback" th:errors="*{customerId}"></span>
+                        </div>
+                        <div>
+                            <label class="form-label" for="firstName">First Name <span style="color:var(--danger);">*</span></label>
+                            <input type="text" id="firstName" th:field="*{firstName}" class="form-control"
+                                   th:classappend="${#fields.hasErrors('firstName')} ? 'is-invalid'" placeholder="First Name">
+                            <span th:if="${#fields.hasErrors('firstName')}" class="invalid-feedback" th:errors="*{firstName}"></span>
+                        </div>
+                        <div>
+                            <label class="form-label" for="lastName">Last Name <span style="color:var(--danger);">*</span></label>
+                            <input type="text" id="lastName" th:field="*{lastName}" class="form-control"
+                                   th:classappend="${#fields.hasErrors('lastName')} ? 'is-invalid'" placeholder="Last Name">
+                            <span th:if="${#fields.hasErrors('lastName')}" class="invalid-feedback" th:errors="*{lastName}"></span>
+                        </div>
+                        <div>
+                            <label class="form-label" for="email">Email</label>
+                            <input type="email" id="email" th:field="*{email}" class="form-control"
+                                   th:classappend="${#fields.hasErrors('email')} ? 'is-invalid'" placeholder="email@example.com">
+                            <span th:if="${#fields.hasErrors('email')}" class="invalid-feedback" th:errors="*{email}"></span>
+                        </div>
+                        <div>
+                            <label class="form-label" for="gender">Gender <span style="color:var(--danger);">*</span></label>
+                            <select id="gender" th:field="*{gender}" class="form-select"
+                                    th:classappend="${#fields.hasErrors('gender')} ? 'is-invalid'">
+                                <option value="">Select Gender</option>
+                                <option th:each="g : ${genders}" th:value="${g}" th:text="${g}">Gender</option>
+                            </select>
+                            <span th:if="${#fields.hasErrors('gender')}" class="invalid-feedback" th:errors="*{gender}"></span>
+                        </div>
+                        <div>
+                            <label class="form-label" for="tenure">Tenure (months) <span style="color:var(--danger);">*</span></label>
+                            <input type="number" id="tenure" th:field="*{tenure}" class="form-control" min="0" max="120"
+                                   th:classappend="${#fields.hasErrors('tenure')} ? 'is-invalid'" placeholder="0-120">
+                            <span th:if="${#fields.hasErrors('tenure')}" class="invalid-feedback" th:errors="*{tenure}"></span>
+                        </div>
+                    </div>
+
+                    <div class="row cols-3 g-20" style="margin-top:16px;">
+                        <div class="d-flex align-items-center gap-8" style="padding-top:8px;">
+                            <input type="checkbox" id="seniorCitizen" th:field="*{seniorCitizen}"
+                                   style="width:16px;height:16px;accent-color:var(--primary);">
+                            <label class="form-label" for="seniorCitizen" style="margin-bottom:0;">Senior Citizen</label>
+                        </div>
+                        <div class="d-flex align-items-center gap-8" style="padding-top:8px;">
+                            <input type="checkbox" id="partner" th:field="*{partner}"
+                                   style="width:16px;height:16px;accent-color:var(--primary);">
+                            <label class="form-label" for="partner" style="margin-bottom:0;">Has Partner</label>
+                        </div>
+                        <div class="d-flex align-items-center gap-8" style="padding-top:8px;">
+                            <input type="checkbox" id="dependents" th:field="*{dependents}"
+                                   style="width:16px;height:16px;accent-color:var(--primary);">
+                            <label class="form-label" for="dependents" style="margin-bottom:0;">Has Dependents</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phone & Internet -->
+                <div class="form-section">
+                    <div class="form-section-title">Services</div>
+                    <div class="row cols-3 g-20">
+                        <div class="d-flex align-items-center gap-8" style="padding-top:8px;">
+                            <input type="checkbox" id="phoneService" th:field="*{phoneService}"
+                                   style="width:16px;height:16px;accent-color:var(--primary);">
+                            <label class="form-label" for="phoneService" style="margin-bottom:0;">Phone Service</label>
+                        </div>
+                        <div>
+                            <label class="form-label">Multiple Lines</label>
+                            <select id="multipleLines" th:field="*{multipleLines}" class="form-select">
+                                <option th:each="s : ${serviceStatuses}" th:value="${s}"
+                                        th:text="${#strings.replace(s.name(),'_',' ')}">Status</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Internet Service <span style="color:var(--danger);">*</span></label>
+                            <select id="internetService" th:field="*{internetService}" class="form-select">
+                                <option value="">Select</option>
+                                <option th:each="s : ${internetServices}" th:value="${s}"
+                                        th:text="${#strings.replace(s.name(),'_',' ')}">Service</option>
+                            </select>
+                        </div>
+                        <div class="internet-only">
+                            <label class="form-label">Online Security</label>
+                            <select th:field="*{onlineSecurity}" class="form-select">
+                                <option th:each="s : ${serviceStatuses}" th:value="${s}"
+                                        th:text="${#strings.replace(s.name(),'_',' ')}">Status</option>
+                            </select>
+                        </div>
+                        <div class="internet-only">
+                            <label class="form-label">Online Backup</label>
+                            <select th:field="*{onlineBackup}" class="form-select">
+                                <option th:each="s : ${serviceStatuses}" th:value="${s}"
+                                        th:text="${#strings.replace(s.name(),'_',' ')}">Status</option>
+                            </select>
+                        </div>
+                        <div class="internet-only">
+                            <label class="form-label">Device Protection</label>
+                            <select th:field="*{deviceProtection}" class="form-select">
+                                <option th:each="s : ${serviceStatuses}" th:value="${s}"
+                                        th:text="${#strings.replace(s.name(),'_',' ')}">Status</option>
+                            </select>
+                        </div>
+                        <div class="internet-only">
+                            <label class="form-label">Tech Support</label>
+                            <select th:field="*{techSupport}" class="form-select">
+                                <option th:each="s : ${serviceStatuses}" th:value="${s}"
+                                        th:text="${#strings.replace(s.name(),'_',' ')}">Status</option>
+                            </select>
+                        </div>
+                        <div class="internet-only">
+                            <label class="form-label">Streaming TV</label>
+                            <select th:field="*{streamingTv}" class="form-select">
+                                <option th:each="s : ${serviceStatuses}" th:value="${s}"
+                                        th:text="${#strings.replace(s.name(),'_',' ')}">Status</option>
+                            </select>
+                        </div>
+                        <div class="internet-only">
+                            <label class="form-label">Streaming Movies</label>
+                            <select th:field="*{streamingMovies}" class="form-select">
+                                <option th:each="s : ${serviceStatuses}" th:value="${s}"
+                                        th:text="${#strings.replace(s.name(),'_',' ')}">Status</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Billing -->
+                <div class="form-section">
+                    <div class="form-section-title">Billing & Contract</div>
+                    <div class="row cols-3 g-20">
+                        <div>
+                            <label class="form-label">Contract Type <span style="color:var(--danger);">*</span></label>
+                            <select th:field="*{contract}" class="form-select">
+                                <option value="">Select Contract</option>
+                                <option th:each="c : ${contracts}" th:value="${c}"
+                                        th:text="${#strings.replace(c.name(),'_',' ')}">Contract</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Payment Method <span style="color:var(--danger);">*</span></label>
+                            <select th:field="*{paymentMethod}" class="form-select">
+                                <option value="">Select Method</option>
+                                <option th:each="pm : ${paymentMethods}" th:value="${pm}"
+                                        th:text="${pm.displayName}">Method</option>
+                            </select>
+                        </div>
+                        <div class="d-flex align-items-center gap-8" style="padding-top:8px;">
+                            <input type="checkbox" id="paperlessBilling" th:field="*{paperlessBilling}"
+                                   style="width:16px;height:16px;accent-color:var(--primary);">
+                            <label class="form-label" for="paperlessBilling" style="margin-bottom:0;">Paperless Billing</label>
+                        </div>
+                        <div>
+                            <label class="form-label">Monthly Charges ($) <span style="color:var(--danger);">*</span></label>
+                            <input type="number" step="0.01" min="0" th:field="*{monthlyCharges}" class="form-control"
+                                   th:classappend="${#fields.hasErrors('monthlyCharges')} ? 'is-invalid'" placeholder="0.00">
+                            <span th:if="${#fields.hasErrors('monthlyCharges')}" class="invalid-feedback" th:errors="*{monthlyCharges}"></span>
+                        </div>
+                        <div>
+                            <label class="form-label">Total Charges ($) <span style="color:var(--danger);">*</span></label>
+                            <input type="number" step="0.01" min="0" th:field="*{totalCharges}" class="form-control"
+                                   th:classappend="${#fields.hasErrors('totalCharges')} ? 'is-invalid'" placeholder="0.00">
+                            <span th:if="${#fields.hasErrors('totalCharges')}" class="invalid-feedback" th:errors="*{totalCharges}"></span>
+                        </div>
+                        <div class="d-flex align-items-center gap-8" style="padding-top:8px;">
+                            <input type="checkbox" id="churnStatus" th:field="*{churnStatus}"
+                                   style="width:16px;height:16px;accent-color:var(--danger);">
+                            <label class="form-label" for="churnStatus" style="margin-bottom:0;color:var(--danger);">Mark as Churned</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="d-flex gap-12" style="justify-content:flex-end;">
+                    <a th:href="@{/customers}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i th:class="${editMode ? 'bi bi-check-lg' : 'bi bi-person-plus'}"></i>
+                        <span th:text="${editMode ? 'Update Customer' : 'Create Customer'}">Submit</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div th:replace="~{fragments/layout :: footer}"></div>
+    </div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

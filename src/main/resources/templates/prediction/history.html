@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction History | ChurnGuard Pro</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>.toast-item{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:8px;background:#1e293b;color:#f1f5f9;font-size:13.5px;font-weight:500;box-shadow:0 10px 15px -3px rgba(0,0,0,.2);opacity:0;transform:translateX(100%);transition:all .3s ease;max-width:360px;}.toast-item.show{opacity:1;transform:translateX(0);}.toast-item.toast-success{border-left:4px solid #10b981;}.toast-close{background:transparent;border:none;color:#94a3b8;cursor:pointer;font-size:16px;padding:0;}</style>
+</head>
+<body>
+<div class="app-wrapper">
+    <div th:replace="~{fragments/layout :: sidebar('history')}"></div>
+    <div class="main-content" id="mainContent">
+        <div th:replace="~{fragments/layout :: topbar('Prediction History')}"></div>
+
+        <div class="page-content fade-in">
+            <!-- Flash -->
+            <div th:if="${successMessage}" class="alert alert-success alert-auto-dismiss">
+                <i class="bi bi-check-circle-fill"></i><span th:text="${successMessage}"></span>
+            </div>
+
+            <div class="page-header">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-12">
+                    <div>
+                        <h1 class="page-title">Prediction History</h1>
+                        <p class="page-subtitle">All churn predictions stored in the database</p>
+                    </div>
+                    <a th:href="@{/predictions/new}" class="btn btn-primary">
+                        <i class="bi bi-cpu-fill"></i> New Prediction
+                    </a>
+                </div>
+            </div>
+
+            <!-- Summary KPIs -->
+            <div class="row cols-4 g-20" style="margin-bottom:24px;">
+                <div class="stat-card primary">
+                    <div class="stat-icon primary"><i class="bi bi-cpu-fill"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-label">Total Predictions</div>
+                        <div class="stat-value" th:text="${totalPredictions}">0</div>
+                    </div>
+                </div>
+                <div class="stat-card danger">
+                    <div class="stat-icon danger"><i class="bi bi-fire"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-label">High Risk</div>
+                        <div class="stat-value" th:text="${highCount}">0</div>
+                    </div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-icon warning"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-label">Medium Risk</div>
+                        <div class="stat-value" th:text="${mediumCount}">0</div>
+                    </div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-icon success"><i class="bi bi-shield-check"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-label">Low Risk</div>
+                        <div class="stat-value" th:text="${lowCount}">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-container">
+                <div class="table-header">
+                    <form th:action="@{/predictions/history}" method="get" class="d-flex flex-wrap gap-8" style="flex:1;align-items:center;">
+                        <div class="search-box">
+                            <i class="bi bi-search search-icon"></i>
+                            <input type="text" name="search" class="form-control" th:value="${search}"
+                                   placeholder="Search by customer..." oninput="debounceSearch(this)">
+                        </div>
+                        <select name="riskCategory" class="form-select" style="width:auto;min-width:150px;"
+                                onchange="this.form.submit()">
+                            <option value="">All Risk Levels</option>
+                            <option th:each="r : ${riskCategories}" th:value="${r}" th:text="${r}"
+                                    th:selected="${r == riskCategory}">Risk</option>
+                        </select>
+                        <input type="hidden" name="sortBy" th:value="${sortBy}">
+                        <input type="hidden" name="sortDir" th:value="${sortDir}">
+                    </form>
+                </div>
+
+                <div style="overflow-x:auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Customer</th>
+                                <th>
+                                    <a th:href="@{/predictions/history(sortBy='churnProbability',sortDir=${sortBy == 'churnProbability' ? reverseSortDir : 'desc'},search=${search},riskCategory=${riskCategory})}">
+                                        Probability <i style="font-size:10px;" th:class="${sortBy == 'churnProbability'} ? ('bi bi-chevron-' + (sortDir == 'asc' ? 'up' : 'down')) : 'bi bi-chevron-expand'"></i>
+                                    </a>
+                                </th>
+                                <th>Risk Level</th>
+                                <th>Method</th>
+                                <th>
+                                    <a th:href="@{/predictions/history(sortBy='createdAt',sortDir=${sortBy == 'createdAt' ? reverseSortDir : 'desc'},search=${search},riskCategory=${riskCategory})}">
+                                        Date <i style="font-size:10px;" th:class="${sortBy == 'createdAt'} ? ('bi bi-chevron-' + (sortDir == 'asc' ? 'up' : 'down')) : 'bi bi-chevron-expand'"></i>
+                                    </a>
+                                </th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="p : ${predictions}" th:data-href="@{/predictions/history/{id}(id=${p.id})}">
+                                <td style="color:var(--text-muted);font-size:12px;" th:text="'#' + ${p.id}">#1</td>
+                                <td>
+                                    <div class="fw-600" th:text="${p.customer.fullName}">Name</div>
+                                    <div style="font-size:11px;color:var(--text-muted);" th:text="${p.customer.customerId}">ID</div>
+                                </td>
+                                <td>
+                                    <div class="fw-600" th:text="${p.probabilityPercent} + '%'">0%</div>
+                                    <div class="progress" style="width:90px;margin-top:4px;">
+                                        <div class="progress-bar"
+                                             th:classappend="${p.riskCategory.name() == 'HIGH'} ? 'progress-bar-danger' : (${p.riskCategory.name() == 'MEDIUM'} ? 'progress-bar-warning' : 'progress-bar-success')"
+                                             th:style="'width:' + ${p.probabilityPercent} + '%'"></div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge"
+                                          th:classappend="${p.riskCategory.name() == 'HIGH'} ? 'badge-danger' : (${p.riskCategory.name() == 'MEDIUM'} ? 'badge-warning' : 'badge-success')"
+                                          th:text="${p.riskCategory}">Risk</span>
+                                </td>
+                                <td><span class="badge badge-demo" th:text="${p.predictionMethod.label}">Demo</span></td>
+                                <td style="font-size:12px;" th:text="${#temporals.format(p.createdAt, 'MMM d, yyyy HH:mm')}">Date</td>
+                                <td>
+                                    <a th:href="@{/predictions/history/{id}(id=${p.id})}" class="btn btn-sm btn-secondary">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr th:if="${predictions.totalElements == 0}">
+                                <td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">
+                                    <i class="bi bi-cpu" style="font-size:32px;display:block;margin-bottom:8px;"></i>
+                                    No predictions found. <a th:href="@{/predictions/new}">Run your first prediction.</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;border-top:1px solid var(--border);">
+                    <span style="font-size:13px;color:var(--text-muted);">
+                        Page <strong th:text="${predictions.number + 1}">1</strong> of
+                        <strong th:text="${predictions.totalPages > 0 ? predictions.totalPages : 1}">1</strong>
+                    </span>
+                    <ul class="pagination">
+                        <li class="page-item" th:classappend="${predictions.first} ? 'disabled'">
+                            <a class="page-link" th:href="@{/predictions/history(page=${predictions.number - 1},size=${predictions.size},search=${search},sortBy=${sortBy},sortDir=${sortDir},riskCategory=${riskCategory})}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item" th:each="i : ${#numbers.sequence(0, predictions.totalPages > 0 ? predictions.totalPages - 1 : 0)}"
+                            th:if="${i >= predictions.number - 2 and i <= predictions.number + 2}"
+                            th:classappend="${i == predictions.number} ? 'active'">
+                            <a class="page-link" th:text="${i + 1}"
+                               th:href="@{/predictions/history(page=${i},size=${predictions.size},search=${search},sortBy=${sortBy},sortDir=${sortDir},riskCategory=${riskCategory})}">1</a>
+                        </li>
+                        <li class="page-item" th:classappend="${predictions.last} ? 'disabled'">
+                            <a class="page-link" th:href="@{/predictions/history(page=${predictions.number + 1},size=${predictions.size},search=${search},sortBy=${sortBy},sortDir=${sortDir},riskCategory=${riskCategory})}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div th:replace="~{fragments/layout :: footer}"></div>
+    </div>
+</div>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

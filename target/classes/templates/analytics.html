@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics | ChurnGuard Pro</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <style>.toast-item{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:8px;background:#1e293b;color:#f1f5f9;font-size:13.5px;font-weight:500;box-shadow:0 10px 15px -3px rgba(0,0,0,.2);opacity:0;transform:translateX(100%);transition:all .3s ease;max-width:360px;}.toast-item.show{opacity:1;transform:translateX(0);}.toast-close{background:transparent;border:none;color:#94a3b8;cursor:pointer;font-size:16px;padding:0;}</style>
+</head>
+<body>
+<div class="app-wrapper">
+    <div th:replace="~{fragments/layout :: sidebar('analytics')}"></div>
+    <div class="main-content" id="mainContent">
+        <div th:replace="~{fragments/layout :: topbar('Analytics')}"></div>
+
+        <div class="page-content fade-in">
+            <div class="page-header">
+                <h1 class="page-title">Analytics Dashboard</h1>
+                <p class="page-subtitle">Visual analysis of customer churn patterns from real database records</p>
+            </div>
+
+            <!-- Row 1: Distribution charts -->
+            <div class="row cols-2 g-20" style="margin-bottom:20px;">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="bi bi-pie-chart-fill" style="color:var(--primary);margin-right:8px;"></i>Overall Churn Distribution</span>
+                    </div>
+                    <div class="chart-container" style="height:280px;">
+                        <canvas id="churnDistChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="bi bi-pie-chart-fill" style="color:var(--secondary);margin-right:8px;"></i>Contract Distribution</span>
+                    </div>
+                    <div class="chart-container" style="height:280px;">
+                        <canvas id="contractDistChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Churn by Contract & Internet -->
+            <div class="row cols-2 g-20" style="margin-bottom:20px;">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="bi bi-bar-chart-fill" style="color:var(--warning);margin-right:8px;"></i>Churn by Contract Type</span>
+                    </div>
+                    <div class="chart-container" style="height:280px;">
+                        <canvas id="churnContractChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="bi bi-bar-chart-fill" style="color:var(--info);margin-right:8px;"></i>Churn by Internet Service</span>
+                    </div>
+                    <div class="chart-container" style="height:280px;">
+                        <canvas id="churnInternetChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Churn by Tenure & Payment -->
+            <div class="row cols-2 g-20" style="margin-bottom:20px;">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="bi bi-bar-chart-steps" style="color:var(--success);margin-right:8px;"></i>Churn by Customer Tenure</span>
+                    </div>
+                    <div class="chart-container" style="height:280px;">
+                        <canvas id="churnTenureChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="bi bi-bar-chart-fill" style="color:var(--danger);margin-right:8px;"></i>Churn by Payment Method</span>
+                    </div>
+                    <div class="chart-container" style="height:280px;">
+                        <canvas id="churnPaymentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 4: Monthly charges & Gender -->
+            <div class="row cols-2 g-20">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="bi bi-currency-dollar" style="color:var(--warning);margin-right:8px;"></i>Churn by Monthly Charges</span>
+                    </div>
+                    <div class="chart-container" style="height:280px;">
+                        <canvas id="churnChargesChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title"><i class="bi bi-gender-ambiguous" style="color:var(--secondary);margin-right:8px;"></i>Customer Gender Distribution</span>
+                    </div>
+                    <div class="chart-container" style="height:280px;">
+                        <canvas id="genderDistChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div th:replace="~{fragments/layout :: footer}"></div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script th:src="@{/js/app.js}"></script>
+<script th:inline="javascript">
+    function parseData(val) {
+        if (!val) return {};
+        if (typeof val === 'string') {
+            try { return JSON.parse(val); } catch(e) { return {}; }
+        }
+        return val;
+    }
+    const churnDist = parseData(/*[[${churnDistJson}]]*/ {});
+    const contractDist = parseData(/*[[${contractDistJson}]]*/ {});
+    const churnByContract = parseData(/*[[${churnByContractJson}]]*/ {});
+    const churnByInternet = parseData(/*[[${churnByInternetJson}]]*/ {});
+    const churnByTenure = parseData(/*[[${churnByTenureJson}]]*/ {});
+    const churnByPayment = parseData(/*[[${churnByPaymentJson}]]*/ {});
+    const churnByCharges = parseData(/*[[${churnByChargesJson}]]*/ {});
+    const genderDist = parseData(/*[[${genderDistJson}]]*/ {});
+
+    const COLORS = ['#4f46e5','#06b6d4','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899'];
+
+    const tooltipDefaults = {
+        backgroundColor: '#1e293b',
+        titleFont: { family: 'Inter', size: 12, weight: '600' },
+        bodyFont: { family: 'Inter', size: 12 },
+        padding: 10, cornerRadius: 8,
+        titleColor: '#f1f5f9', bodyColor: '#94a3b8'
+    };
+
+    const scalesDefaults = {
+        x: { grid: { color: '#e2e8f0' }, ticks: { font: { family: 'Inter', size: 11 }, color: '#64748b' } },
+        y: { grid: { color: '#e2e8f0' }, ticks: { font: { family: 'Inter', size: 11 }, color: '#64748b' }, beginAtZero: true }
+    };
+
+    // Churn Distribution Doughnut
+    new Chart(document.getElementById('churnDistChart'), {
+        type: 'doughnut',
+        data: {
+            labels: churnDist.labels,
+            datasets: [{ data: churnDist.data, backgroundColor: churnDist.colors, borderWidth: 0, hoverOffset: 8 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '60%',
+            plugins: { legend: { position: 'bottom', labels: { padding: 16, font: { family: 'Inter', size: 12 } } }, tooltip: tooltipDefaults }
+        }
+    });
+
+    // Contract Distribution Doughnut
+    new Chart(document.getElementById('contractDistChart'), {
+        type: 'doughnut',
+        data: {
+            labels: contractDist.labels,
+            datasets: [{ data: contractDist.data, backgroundColor: COLORS, borderWidth: 0, hoverOffset: 8 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '60%',
+            plugins: { legend: { position: 'bottom', labels: { padding: 16, font: { family: 'Inter', size: 12 } } }, tooltip: tooltipDefaults }
+        }
+    });
+
+    // Stacked bar helper
+    function stackedBar(canvasId, data) {
+        return new Chart(document.getElementById(canvasId), {
+            type: 'bar',
+            data: {
+                labels: data.labels,
+                datasets: [
+                    { label: 'Churned', data: data.churned, backgroundColor: '#ef4444', borderRadius: 4 },
+                    { label: 'Active', data: data.active, backgroundColor: '#10b981', borderRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { padding: 12, font: { family: 'Inter', size: 12 } } }, tooltip: tooltipDefaults },
+                scales: { ...scalesDefaults, x: { ...scalesDefaults.x, stacked: true }, y: { ...scalesDefaults.y, stacked: true } }
+            }
+        });
+    }
+
+    stackedBar('churnContractChart', churnByContract);
+    stackedBar('churnInternetChart', churnByInternet);
+    stackedBar('churnTenureChart', churnByTenure);
+    stackedBar('churnPaymentChart', churnByPayment);
+    stackedBar('churnChargesChart', churnByCharges);
+
+    // Gender Distribution
+    new Chart(document.getElementById('genderDistChart'), {
+        type: 'bar',
+        data: {
+            labels: genderDist.labels,
+            datasets: [{ data: genderDist.data, backgroundColor: COLORS, borderRadius: 6, borderWidth: 0 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: tooltipDefaults },
+            scales: scalesDefaults
+        }
+    });
+</script>
+</body>
+</html>
